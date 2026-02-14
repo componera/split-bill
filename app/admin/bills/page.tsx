@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useBills } from "../../../../lib/api/hooks/useBills";
+import { useBills } from "@/hooks/useBills";
 
 export default function BillsPage() {
 	const params = useParams();

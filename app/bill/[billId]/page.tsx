@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchBill, payItems } from "@/lib/api";
 import { useBillSocket } from "@/hooks/useBillSocket";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -21,22 +20,20 @@ interface Bill {
 
 export default function BillPage({ params }: { params: { billId: string } }) {
 	const billId = params.billId;
-	const { user } = useAuth();
 	const [bill, setBill] = useState<Bill | null>(null);
 	const [selectedItems, setSelectedItems] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 
-	const loadBill = async () => {
+	const loadBill = useCallback(async () => {
 		const data = await fetchBill(billId);
 		setBill(data);
-	};
+	}, [billId]);
 
 	useEffect(() => {
 		loadBill();
-	}, [billId]);
+	}, [loadBill]);
 
-	// subscribe to real-time updates
-	useBillSocket(billId, user.restaurantId, updatedBill => {
+	useBillSocket(billId, (updatedBill: Bill) => {
 		setBill(updatedBill);
 	});
 

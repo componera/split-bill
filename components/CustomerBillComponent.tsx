@@ -9,21 +9,31 @@ interface Props {
 	billId: string;
 }
 
-export default function CustomerBill({ restaurantId, billId }: Props) {
+export default function CustomerBill({ billId }: Props) {
 	const [bill, setBill] = useState<any>(null);
 	const [selected, setSelected] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 
-	async function loadBill() {
-		const data = await fetchBill(restaurantId, billId);
-		setBill(data);
-	}
-
 	useEffect(() => {
-		loadBill();
-	}, []);
+		let isMounted = true; // prevent state update if unmounted
 
-	useBillSocket(restaurantId, billId, updatedBill => {
+		async function fetchData() {
+			try {
+				const data = await fetchBill(billId);
+				if (isMounted) setBill(data); // safe
+			} catch (err) {
+				console.error("Failed to load bill", err);
+			}
+		}
+
+		fetchData();
+
+		return () => {
+			isMounted = false; // cleanup
+		};
+	}, [billId]);
+
+	useBillSocket(billId, updatedBill => {
 		setBill(updatedBill);
 		setSelected([]);
 	});
@@ -35,7 +45,7 @@ export default function CustomerBill({ restaurantId, billId }: Props) {
 	async function handlePay() {
 		setLoading(true);
 
-		await payItems(restaurantId, billId, selected);
+		await payItems(billId, selected);
 
 		setLoading(false);
 	}

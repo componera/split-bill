@@ -3,9 +3,7 @@ import { useEffect } from 'react';
 import { getSocket } from '@/lib/socket';
 
 export function useBillSocket(
-    billId: string,
-    onUpdate: (bill: any) => void
-) {
+    billId: string, onUpdate: (bill: any) => void) {
     useEffect(() => {
         const socket = getSocket();
 

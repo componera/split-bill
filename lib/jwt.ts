@@ -34,6 +34,7 @@ export function isTokenExpired(token: string): boolean {
  * Get restaurantId from current JWT
  */
 export function getRestaurantId(): string | null {
+    if (typeof window === 'undefined') return null; // SSR-safe
     const token = localStorage.getItem('accessToken');
     if (!token) return null;
 
@@ -47,6 +48,7 @@ export function getRestaurantId(): string | null {
  * Get user role from JWT
  */
 export function getUserRole(): JwtPayload['role'] | null {
+    if (typeof window === 'undefined') return null; // SSR-safe
     const token = localStorage.getItem('accessToken');
     if (!token) return null;
 

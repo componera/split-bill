@@ -1,7 +1,15 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { usePayments } from "../../../../lib/api/hooks/usePayments";
+import { usePayments } from "@/hooks/usePayments";
+
+interface Payment {
+	id: string;
+	amount: number;
+	status: "pending" | "completed" | "failed";
+	billId: string;
+	createdAt: string;
+}
 
 export default function PaymentsPage() {
 	const params = useParams();
@@ -22,7 +30,7 @@ export default function PaymentsPage() {
 				</thead>
 
 				<tbody>
-					{payments.map(payment => (
+					{payments.map((payment: Payment) => (
 						<tr key={payment.id}>
 							<td>{payment.id}</td>
 							<td>R {payment.amount}</td>

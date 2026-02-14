@@ -1,6 +1,6 @@
 import "./globals.css";
 import { ReactNode } from "react";
-import { ThemeProvider } from "@shadcn/ui";
+import { ThemeProvider } from "next-themes";
 
 export const metadata = {
 	title: "Bill Splitting SaaS",

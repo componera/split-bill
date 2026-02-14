@@ -1,11 +1,18 @@
 "use client";
 
-import AuthGuard from "@/components/AuthGuard";
+import Link from "next/link";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: any) {
 	return (
-		<AuthGuard allowedRoles={["OWNER", "MANAGER"]}>
-			<div className="min-h-screen bg-gray-100">{children}</div>
-		</AuthGuard>
+		<div className="flex">
+			<aside className="w-64 bg-gray-100 min-h-screen p-4">
+				<nav className="space-y-3">
+					<Link href="/admin/dashboard">Dashboard</Link>
+					<Link href="/admin/staff">Staff</Link>
+				</nav>
+			</aside>
+
+			<main className="flex-1 p-6">{children}</main>
+		</div>
 	);
 }
