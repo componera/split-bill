@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/divvy-tab-logo.png" alt="DivvyTab logo" width="460" />
+  <img src="public/divvy-tab-banner.png" alt="DivvyTab logo" width="460" />
 </p>
 
 <h1 align="center">DivvyTab Frontend</h1>
