@@ -1,43 +1,41 @@
-"use client";
+'use client';
 
-import { useParams } from "next/navigation";
-import { usePayments } from "@/hooks/usePayments";
+import { useAuth } from '@/hooks/useAuth';
+import { usePayments } from '@/hooks/usePayments';
+import DataTable from '@/components/DataTable';
+import TableSkeleton from '@/components/skeletons/TableSkeleton';
 
 interface Payment {
 	id: string;
-	amount: number;
-	status: "pending" | "completed" | "failed";
-	billId: string;
-	createdAt: string;
+	amount?: number;
+	status?: string;
 }
 
+/**
+ * Admin Payments page - lists payments for the logged-in user's restaurant.
+ * Skeleton-first: instant render, data fills in when ready.
+ */
 export default function PaymentsPage() {
-	const params = useParams();
-	const restaurantId = params.restaurantId as string;
-
-	const { payments } = usePayments(restaurantId);
+	const { user } = useAuth();
+	const restaurantId = user?.restaurantId ?? '';
+	const { payments, loading } = usePayments(restaurantId);
 
 	return (
-		<div className="p-6">
-			<h1 className="text-xl font-bold">Payments (Realtime)</h1>
-
-			<table className="w-full mt-4">
-				<thead>
-					<tr>
-						<th>ID</th>
-						<th>Amount</th>
-					</tr>
-				</thead>
-
-				<tbody>
-					{payments.map((payment: Payment) => (
-						<tr key={payment.id}>
-							<td>{payment.id}</td>
-							<td>R {payment.amount}</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
+		<div className="space-y-4 p-6 animate-in fade-in duration-200">
+			<h1 className="text-xl font-bold text-foreground">Payments (Realtime)</h1>
+			{loading || !restaurantId ? (
+				<TableSkeleton rows={6} columns={3} />
+			) : (
+				<DataTable<Payment>
+					columns={[
+						{ key: 'id', header: 'ID', render: p => p.id },
+						{ key: 'amount', header: 'Amount', render: p => `R ${(p.amount ?? 0).toFixed(2)}` },
+						{ key: 'status', header: 'Status', render: p => p.status ?? '-' },
+					]}
+					data={payments as Payment[]}
+					emptyMessage="No payments yet"
+				/>
+			)}
 		</div>
 	);
 }

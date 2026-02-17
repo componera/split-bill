@@ -1,0 +1,10 @@
+# Bun configuration for Divvy Tab frontend
+# https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Use bun for faster installs
+frozen-lockfile = false
+
+[test]
+# Preload Happy DOM and Testing Library for React component tests
+preload = ["./test/happydom.ts", "./test/setup.ts"]

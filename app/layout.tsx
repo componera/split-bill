@@ -1,17 +1,22 @@
-import "./globals.css";
-import { ReactNode } from "react";
-import { ThemeProvider } from "../components/ThemeProvider";
+import './globals.css';
+import { ReactNode } from 'react';
+import { ThemeProvider } from '../components/ThemeProvider';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const metadata = {
-	title: "Bill Splitting SaaS",
-	description: "Multi-tenant restaurant bill splitting app",
+	title: 'DivvyTab – Split the bill, not the hassle',
+	description:
+		"Integrate bill splitting with your POS. Customers scan a QR code, select their items, add a tip, and pay. Friends split the bill until it's settled.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body>
-				<ThemeProvider>{children}</ThemeProvider>
+			<body suppressHydrationWarning>
+				<ThemeProvider>
+					<ThemeToggle />
+					{children}
+				</ThemeProvider>
 			</body>
 		</html>
 	);

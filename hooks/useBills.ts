@@ -1,50 +1,56 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { apiFetch } from '@/lib/api';
-import { getSocket, emitEvent } from '@/lib/socket';
+import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/lib/api";
+import { getSocket, emitEvent } from "@/lib/socket";
 
+/**
+ * Fetches bills for a restaurant with real-time socket updates.
+ * Properly cleans up socket listeners on unmount.
+ */
 export function useBills(restaurantId: string) {
-  const [bills, setBills] = useState<any[]>([]);
+  const [bills, setBills] = useState<{ id: string; total: number; status: string }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Stable async function to fetch bills
   const fetchBills = useCallback(async () => {
-    const res = await apiFetch(`/admin/${restaurantId}/bills`);
-    const data = await res.json();
-    setBills(data);
+    if (!restaurantId) return;
+    setLoading(true);
+    try {
+      const res = await apiFetch("/admin/bills");
+      const data = await res.json();
+      setBills(Array.isArray(data) ? data : []);
+    } finally {
+      setLoading(false);
+    }
   }, [restaurantId]);
 
   useEffect(() => {
-    // Wrap in async function to avoid synchronous setState
-    const initialize = async () => {
-      await fetchBills();
+    if (!restaurantId) {
+      setLoading(false);
+      return;
+    }
 
-      const socket = getSocket();
+    void fetchBills();
 
-      // Join the restaurant room
-      emitEvent('joinRestaurant', { restaurantId });
+    const socket = getSocket();
+    emitEvent("joinRestaurant", { restaurantId });
 
-      const handleBillUpdated = (bill: any) => {
-        setBills(prev => prev.map(b => (b.id === bill.id ? bill : b)));
-      };
-
-      const handleBillCreated = (bill: any) => {
-        setBills(prev => [bill, ...prev]);
-      };
-
-      socket.on('bill.updated', handleBillUpdated);
-      socket.on('bill.created', handleBillCreated);
-
-      // Cleanup function
-      return () => {
-        socket.off('bill.updated', handleBillUpdated);
-        socket.off('bill.created', handleBillCreated);
-      };
+    const handleBillUpdated = (bill: { id: string }) => {
+      setBills((prev) => prev.map((b) => (b.id === bill.id ? { ...b, ...bill } : b)));
     };
 
-    void initialize(); // async effect pattern
+    const handleBillCreated = (bill: { id: string }) => {
+      setBills((prev) => [bill as typeof prev[0], ...prev]);
+    };
 
+    socket.on("bill.updated", handleBillUpdated);
+    socket.on("bill.created", handleBillCreated);
+
+    return () => {
+      socket.off("bill.updated", handleBillUpdated);
+      socket.off("bill.created", handleBillCreated);
+    };
   }, [restaurantId, fetchBills]);
 
-  return { bills, fetchBills };
+  return { bills, loading, fetchBills };
 }

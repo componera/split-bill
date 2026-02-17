@@ -10,6 +10,11 @@ module.exports = {
     			sm: 'calc(var(--radius) - 4px)'
     		},
     		colors: {
+    			/* Divvy Tab brand colors */
+    			divvy: {
+    				primary: '#0067D6',
+    				secondary: '#00B2C2',
+    			},
     			background: 'hsl(var(--background))',
     			foreground: 'hsl(var(--foreground))',
     			card: {

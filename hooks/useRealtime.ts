@@ -1,42 +1,46 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { getSocket, emitEvent } from '@/lib/socket';
+import { useEffect, useRef } from "react";
+import { getSocket, emitEvent } from "@/lib/socket";
 
 interface RealtimeOptions {
-    onBillUpdated?: (bill: any) => void;
-    onBillCreated?: (bill: any) => void;
-    onPaymentUpdated?: (payment: any) => void;
-    onBillClosed?: (bill: any) => void;
+    onBillUpdated?: (bill: unknown) => void;
+    onBillCreated?: (bill: unknown) => void;
+    onPaymentUpdated?: (payment: unknown) => void;
+    onBillClosed?: (bill: unknown) => void;
 }
 
+/**
+ * Subscribes to real-time restaurant events via socket.io.
+ * Uses ref for callbacks to avoid effect re-runs on parent re-renders.
+ */
 export function useRealtime(restaurantId: string, options: RealtimeOptions) {
+    const optsRef = useRef(options);
+    optsRef.current = options;
+
     useEffect(() => {
         if (!restaurantId) return;
 
         const socket = getSocket();
+        emitEvent("joinRestaurant", { restaurantId });
 
-        // Join the restaurant room
-        emitEvent('joinRestaurant', { restaurantId });
+        const handlers = {
+            "bill.updated": (bill: unknown) => optsRef.current.onBillUpdated?.(bill),
+            "bill.created": (bill: unknown) => optsRef.current.onBillCreated?.(bill),
+            "payment.completed": (p: unknown) => optsRef.current.onPaymentUpdated?.(p),
+            "bill.closed": (bill: unknown) => optsRef.current.onBillClosed?.(bill),
+        };
 
-        // Handlers
-        const handleBillUpdated = (bill: any) => options.onBillUpdated?.(bill);
-        const handleBillCreated = (bill: any) => options.onBillCreated?.(bill);
-        const handlePaymentUpdated = (payment: any) => options.onPaymentUpdated?.(payment);
-        const handleBillClosed = (bill: any) => options.onBillClosed?.(bill);
-
-        // Register listeners
-        socket.on('bill.updated', handleBillUpdated);
-        socket.on('bill.created', handleBillCreated);
-        socket.on('payment.completed', handlePaymentUpdated);
-        socket.on('bill.closed', handleBillClosed);
+        socket.on("bill.updated", handlers["bill.updated"]);
+        socket.on("bill.created", handlers["bill.created"]);
+        socket.on("payment.completed", handlers["payment.completed"]);
+        socket.on("bill.closed", handlers["bill.closed"]);
 
         return () => {
-            // Cleanup
-            socket.off('bill.updated', handleBillUpdated);
-            socket.off('bill.created', handleBillCreated);
-            socket.off('payment.completed', handlePaymentUpdated);
-            socket.off('bill.closed', handleBillClosed);
+            socket.off("bill.updated", handlers["bill.updated"]);
+            socket.off("bill.created", handlers["bill.created"]);
+            socket.off("payment.completed", handlers["payment.completed"]);
+            socket.off("bill.closed", handlers["bill.closed"]);
         };
-    }, [restaurantId, options]);
+    }, [restaurantId]);
 }

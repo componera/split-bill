@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useParams } from "next/navigation";
-import { getSocket, emitEvent, SocketEvents } from "@/lib/socket";
-import { Socket } from "socket.io-client";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { getSocket, emitEvent, SocketEvents } from '@/lib/socket';
+import { Socket } from 'socket.io-client';
+import BillDetailSkeleton from '@/components/skeletons/BillDetailSkeleton';
 
 interface BillItem {
 	id: string;
@@ -18,9 +20,15 @@ interface Bill {
 	items: BillItem[];
 }
 
+/**
+ * Admin Bill Detail - single bill view at /admin/bills/[billsId]
+ * Gets restaurantId from user context, billId from route params.
+ */
 export default function BillDetail() {
-	const params = useParams() as { restaurantId: string; billId: string };
-	const { restaurantId, billId } = params;
+	const params = useParams() as { billsId: string };
+	const billId = params.billsId;
+	const { user } = useAuth();
+	const restaurantId = user?.restaurantId ?? '';
 	const [bill, setBill] = useState<Bill | null>(null);
 
 	useEffect(() => {
@@ -36,27 +44,29 @@ export default function BillDetail() {
 		const socket: Socket<SocketEvents> = getSocket();
 
 		// Join rooms
-		emitEvent("joinBill", { restaurantId, billId });
-		emitEvent("joinRestaurant", { restaurantId });
+		emitEvent('joinBill', { restaurantId, billId });
+		emitEvent('joinRestaurant', { restaurantId });
 
 		// Event listeners
 		const handleBillUpdated = (updatedBill: Bill) => {
 			if (updatedBill.id === billId) setBill(updatedBill);
 		};
 
-		socket.on("bill.updated", handleBillUpdated);
+		socket.on('bill.updated', handleBillUpdated);
 
 		return () => {
-			socket.off("bill.updated", handleBillUpdated);
+			socket.off('bill.updated', handleBillUpdated);
 		};
 	}, [restaurantId, billId]);
 
-	if (!bill) return <div>Loading bill...</div>;
+	if (!restaurantId || !bill) {
+		return <BillDetailSkeleton />;
+	}
 
 	const total = bill.items.reduce((sum, item) => sum + item.price, 0);
 
 	return (
-		<div className="p-6">
+		<div className="animate-in fade-in duration-200 p-6">
 			<h1 className="text-2xl font-bold mb-4">Bill Detail</h1>
 			<table className="min-w-full bg-white shadow rounded-xl">
 				<thead>

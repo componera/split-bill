@@ -1,14 +1,24 @@
 "use client";
 
 import useSWR from "swr";
-import axios from "axios";
 import { useRealtime } from "./useRealtime";
+import { apiFetch } from "@/lib/api";
 
-const fetcher = (url: string) =>
-  axios.get(`${process.env.NEXT_PUBLIC_API_URL}${url}`).then((res) => res.data);
+const fetcher = async (url: string) => {
+  const res = await apiFetch(url);
+  if (!res.ok) throw new Error("Failed to fetch payments");
+  return res.json();
+};
 
+/**
+ * Fetches payments for a restaurant with SWR + real-time socket updates.
+ * Uses apiFetch for consistent auth handling.
+ */
 export function usePayments(restaurantId: string) {
-  const { data, mutate } = useSWR(`/admin/${restaurantId}/payments`, fetcher);
+  const { data, isLoading, mutate } = useSWR(
+    restaurantId ? `/admin/${restaurantId}/payments` : null,
+    fetcher
+  );
 
   useRealtime(restaurantId, {
     onPaymentUpdated: () => mutate(),
@@ -16,6 +26,7 @@ export function usePayments(restaurantId: string) {
 
   return {
     payments: data || [],
+    loading: isLoading,
     mutate,
   };
 }

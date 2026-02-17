@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import { decodeToken, JwtPayload } from './jwt';
+import { decodeToken, type JwtPayload } from "./jwt";
+import { API_BASE_URL } from "./constants";
 
 /**
  * Safely get token in browser
@@ -28,7 +29,7 @@ export async function register(data: {
     firstName: string;
     lastName: string;
 }) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

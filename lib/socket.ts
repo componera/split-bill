@@ -1,5 +1,8 @@
-'use client';
-import { io, Socket } from 'socket.io-client';
+"use client";
+
+import { io, type Socket } from "socket.io-client";
+import { getToken } from "./auth";
+import { SOCKET_URL } from "./constants";
 
 export interface SocketEvents {
   'bill.created': (bill: any) => void;
@@ -13,14 +16,6 @@ export interface SocketEvents {
 
 let socket: Socket<SocketEvents> | null = null;
 
-/**
- * Returns the token from localStorage safely (browser only)
- */
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('accessToken');
-}
-
 export function connectSocket(): Socket<SocketEvents> {
   if (socket) return socket;
 
@@ -31,7 +26,7 @@ export function connectSocket(): Socket<SocketEvents> {
 
   const token = getToken();
 
-  socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+  socket = io(SOCKET_URL, {
     transports: ['websocket'],
     auth: { token },
   });

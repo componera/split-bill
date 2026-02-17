@@ -1,24 +1,28 @@
-'use client';
-import { useEffect } from 'react';
-import { getSocket } from '@/lib/socket';
+"use client";
 
-export function useBillSocket(
-    billId: string, onUpdate: (bill: any) => void) {
-    useEffect(() => {
-        const socket = getSocket();
+import { useEffect, useRef } from "react";
+import { getSocket } from "@/lib/socket";
 
-        // join bill room
-        socket.emit('joinBill', { restaurantId: '', billId }); // restaurantId optional if handled by backend
+/**
+ * Subscribes to real-time bill updates for a specific bill.
+ * Uses ref for onUpdate to avoid effect re-runs.
+ */
+export function useBillSocket(billId: string, onUpdate: (bill: unknown) => void) {
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
-        const handleBillUpdated = (bill: any) => onUpdate(bill);
-        const handlePaymentCompleted = (payment: any) => onUpdate(payment);
+  useEffect(() => {
+    const socket = getSocket();
+    socket.emit("joinBill", { restaurantId: "", billId });
 
-        socket.on('bill.updated', handleBillUpdated);
-        socket.on('payment.completed', handlePaymentCompleted);
+    const handleUpdate = (payload: unknown) => onUpdateRef.current(payload);
 
-        return () => {
-            socket.off('bill.updated', handleBillUpdated);
-            socket.off('payment.completed', handlePaymentCompleted);
-        };
-    }, [billId, onUpdate]);
+    socket.on("bill.updated", handleUpdate);
+    socket.on("payment.completed", handleUpdate);
+
+    return () => {
+      socket.off("bill.updated", handleUpdate);
+      socket.off("payment.completed", handleUpdate);
+    };
+  }, [billId]);
 }

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { fetchBill, payItems } from "@/lib/api";
-import { useBillSocket } from "@/hooks/useBillSocket";
+import { useEffect, useState } from 'react';
+import { fetchBill, payItems } from '@/lib/api';
+import { useBillSocket } from '@/hooks/useBillSocket';
 
 interface Props {
 	restaurantId: string;
@@ -22,7 +22,7 @@ export default function CustomerBill({ billId }: Props) {
 				const data = await fetchBill(billId);
 				if (isMounted) setBill(data); // safe
 			} catch (err) {
-				console.error("Failed to load bill", err);
+				console.error('Failed to load bill', err);
 			}
 		}
 
@@ -52,7 +52,7 @@ export default function CustomerBill({ billId }: Props) {
 
 	if (!bill) return <div className="p-6">Loading...</div>;
 
-	const unpaidItems = bill.items.filter((i: any) => i.status === "UNPAID");
+	const unpaidItems = bill.items.filter((i: any) => i.status === 'UNPAID');
 
 	const total = unpaidItems.reduce((sum: number, item: any) => sum + Number(item.price), 0);
 
@@ -69,18 +69,18 @@ export default function CustomerBill({ billId }: Props) {
 					<div
 						key={item.id}
 						className={`flex justify-between p-3 border rounded
-              ${item.status === "PAID" ? "bg-green-100" : "bg-white"}`}>
+              ${item.status === 'PAID' ? 'bg-green-100' : 'bg-white'}`}>
 						<div>
 							<p className="font-medium">{item.name}</p>
 
 							<p className="text-sm text-gray-500">R{item.price}</p>
 						</div>
 
-						{item.status === "UNPAID" && (
+						{item.status === 'UNPAID' && (
 							<input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleItem(item.id)} />
 						)}
 
-						{item.status === "PAID" && <span className="text-green-600 font-semibold">Paid</span>}
+						{item.status === 'PAID' && <span className="text-green-600 font-semibold">Paid</span>}
 					</div>
 				))}
 			</div>
@@ -94,8 +94,8 @@ export default function CustomerBill({ billId }: Props) {
 			<button
 				disabled={selected.length === 0 || loading}
 				onClick={handlePay}
-				className="mt-4 w-full bg-black text-white p-3 rounded disabled:bg-gray-400">
-				{loading ? "Processing..." : "Pay Selected Items"}
+				className="mt-4 w-full cursor-pointer bg-black text-white p-3 rounded transition-all duration-150 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-400 disabled:active:scale-100">
+				{loading ? 'Processing...' : 'Pay Selected Items'}
 			</button>
 		</div>
 	);

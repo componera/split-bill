@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
 	return (
-		<NextThemesProvider attribute="class" defaultTheme="dark" enableSystem={true} storageKey="app-theme">
+		<NextThemesProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="divvy-theme">
 			{children}
 		</NextThemesProvider>
 	);

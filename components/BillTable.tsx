@@ -1,4 +1,4 @@
-import BillItemRow from "./BillItemRow";
+import BillItemRow from './BillItemRow';
 
 export type Bill = {
 	id: string;
@@ -6,7 +6,7 @@ export type Bill = {
 	total: number;
 };
 
-export default function BillTable({ bills, restaurantId }: { bills: Bill[]; restaurantId: string }) {
+export default function BillTable({ bills }: { bills: Bill[]; restaurantId?: string }) {
 	return (
 		<table className="min-w-full bg-white shadow rounded-xl">
 			<thead>
@@ -19,7 +19,7 @@ export default function BillTable({ bills, restaurantId }: { bills: Bill[]; rest
 			</thead>
 			<tbody>
 				{bills.map(bill => (
-					<BillItemRow key={bill.id} bill={bill} restaurantId={restaurantId} />
+					<BillItemRow key={bill.id} bill={bill} />
 				))}
 			</tbody>
 		</table>
