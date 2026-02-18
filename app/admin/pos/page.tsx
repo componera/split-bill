@@ -1,20 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminPosPage() {
-	const router = useRouter();
-	const { user } = useAuth(); // your auth hook
 	const [isConnecting, setIsConnecting] = useState(false);
-
-	useEffect(() => {
-		if (!user) {
-			router.replace("/login"); // optional: redirect if not logged in
-		}
-	}, [user, router]);
 
 	const handleConnectSquare = () => {
 		const clientId = process.env.NEXT_PUBLIC_SQUARE_APP_ID;
@@ -30,31 +20,35 @@ export default function AdminPosPage() {
 
 	// Check if Square redirected back with code
 	useEffect(() => {
-		const urlParams = new URLSearchParams(window.location.search);
-		const code = urlParams.get("code");
+		const code = new URLSearchParams(window.location.search).get("code");
 
-		if (code && user) {
-			setIsConnecting(true);
-			fetch("/api/square-exchange", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ code }),
-			})
-				.then(res => res.json())
-				.then(data => {
-					console.log("Square auth saved:", data);
-					setIsConnecting(false);
-					// Optionally remove code from URL
-					window.history.replaceState({}, document.title, "/admin/pos");
-				})
-				.catch(err => {
-					console.error(err);
-					setIsConnecting(false);
+		if (!code) return;
+
+		// Wrap async logic in an inner function
+		const exchangeCode = async () => {
+			try {
+				setIsConnecting(true); // safe now, inside async function
+
+				const res = await fetch("/api/square-exchange", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ code }),
 				});
-		}
-	}, [user]);
 
-	if (!user) return null; // optional: blank while redirecting
+				const data = await res.json();
+				console.log("Square auth saved:", data);
+
+				// Remove code from URL
+				window.history.replaceState({}, document.title, "/admin/pos");
+			} catch (err) {
+				console.error(err);
+			} finally {
+				setIsConnecting(false);
+			}
+		};
+
+		exchangeCode();
+	}, []);
 
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-white dark:bg-black p-8">
@@ -64,7 +58,7 @@ export default function AdminPosPage() {
 				onClick={handleConnectSquare}
 				disabled={isConnecting}
 				className={`px-6 py-3 rounded-lg font-semibold transition-colors
-          ${isConnecting ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700 text-white"}`}>
+        ${isConnecting ? "bg-primary/50 text-white cursor-not-allowed" : "bg-primary text-white hover:bg-primary-dark"}`}>
 				{isConnecting ? "Connecting..." : "Connect to Square"}
 			</button>
 		</div>
