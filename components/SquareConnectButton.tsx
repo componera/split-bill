@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 type SquareLocation = {
 	id: string;
@@ -23,9 +24,7 @@ export default function SquareConnectButton() {
 	useEffect(() => {
 		const checkConnection = async () => {
 			try {
-				const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/square/locations`, {
-					credentials: "include",
-				});
+				const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/square/locations`);
 
 				if (res.ok) {
 					const data: SquareLocation[] = await res.json();
