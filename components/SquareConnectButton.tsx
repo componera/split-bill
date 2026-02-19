@@ -6,7 +6,7 @@ export default function SquareConnectButton() {
 	const [isConnecting, setIsConnecting] = useState(false);
 
 	const handleConnect = () => {
-		const clientId = process.env.SQUARE_APP_ID;
+		const clientId = process.env.NEXT_PUBLIC_SQUARE_APP_ID;
 		const squareAuthBaseUrl = `${process.env.NEXT_PUBLIC_SQUARE_BASE_URL}/oauth2/authorize`;
 		const redirectUri = `${window.location.origin}/admin/pos`;
 		const scope = [
