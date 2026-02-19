@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 type SquareTokenResponse = {
     access_token: string;
@@ -25,7 +26,9 @@ export async function POST(req: NextRequest) {
         // 1️⃣ Exchange code for access token
         const tokenRes = await fetch("https://connect.squareup.com/oauth2/token", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
                 client_id: clientId,
                 client_secret: clientSecret,
@@ -42,11 +45,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(tokenData, { status: 400 });
         }
 
+        const cookieStore = cookies();
+        const token = (await cookieStore).get("access_token")?.value;
+
         // 2️⃣ Save auth details to NestJS backend
         const saveRes = await fetch("https://backend.divvytab.com/square/auth", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`, // Pass existing JWT for authentication
             },
             credentials: "include",
             body: JSON.stringify({
