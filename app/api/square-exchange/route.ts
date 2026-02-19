@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
             headers: {
                 "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify({
                 squareAccessToken: tokenData.access_token,
                 squareMerchantId: tokenData.merchant_id,
