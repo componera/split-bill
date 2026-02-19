@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
         }
 
         // Use server-only secret here
-        const clientId = process.env.SQUARE_APP_ID; // server-only
+        const clientId = process.env.NEXT_PUBLIC_SQUARE_BASE_URL;
         const clientSecret = process.env.SQUARE_APP_SECRET; // server-only
         const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/admin/pos`;
-        const squareAuthBaseUrl = process.env.SQUARE_BASE_URL || "https://connect.squareup.com";
+        const squareAuthBaseUrl = process.env.NEXT_PUBLIC_SQUARE_BASE_URL || "https://connect.squareup.com";
 
         if (!clientId || !clientSecret) {
             console.error("Missing Square clientId or clientSecret");
