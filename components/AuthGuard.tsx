@@ -1,24 +1,40 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/auth";
 
-export default function AuthGuard({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
+interface AuthGuardProps {
+	children: React.ReactNode;
+	allowedRoles?: string[];
+}
+
+export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
 	const router = useRouter();
+	const [authorized, setAuthorized] = useState(false);
 
 	useEffect(() => {
-		const user = getUser();
+		(async () => {
+			try {
+				const user = await getUser(); // await the Promise
 
-		if (!user) {
-			router.push("/login");
-			return;
-		}
+				if (!user) {
+					router.push("/login");
+					return;
+				}
 
-		if (allowedRoles && !allowedRoles.includes(user.role)) {
-			router.push("/login");
-		}
-	}, []);
+				if (allowedRoles && !allowedRoles.includes(user.role)) {
+					router.push("/login");
+					return;
+				}
 
-	return <>{children}</>;
+				setAuthorized(true); // user is allowed
+			} catch {
+				router.push("/login");
+			}
+		})();
+	}, [allowedRoles, router]);
+
+	// Only render children if authorized
+	return <>{authorized ? children : null}</>;
 }
