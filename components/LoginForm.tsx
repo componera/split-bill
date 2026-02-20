@@ -1,19 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { getUser } from '@/lib/auth';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 /**
  * Login form component - handles email/password authentication.
- * Uses primary theme colors for consistency with Divvy Tab brand.
+ * Fully cookie-based; no client-side token storage.
  */
 export default function LoginForm() {
 	const { login } = useAuth();
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -22,32 +21,20 @@ export default function LoginForm() {
 		setError(null);
 
 		try {
+			// login() handles cookie-based auth internally
 			await login(email, password);
-			const loggedInUser = getUser();
-			if (!loggedInUser) {
-				window.location.href = '/admin/dashboard';
-				return;
-			}
-			switch (loggedInUser.role) {
-				case 'OWNER':
-				case 'MANAGER':
-					window.location.href = '/admin/dashboard';
-					break;
-				case 'STAFF':
-					window.location.href = '/admin/dashboard';
-					break;
-				default:
-					window.location.href = '/admin/dashboard';
-			}
+
+			// redirect after successful login
+			window.location.href = "/admin/dashboard";
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : 'Login failed');
+			setError(err instanceof Error ? err.message : "Login failed");
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const handleKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') handleLogin();
+		if (e.key === "Enter") handleLogin();
 	};
 
 	return (
@@ -75,7 +62,7 @@ export default function LoginForm() {
 			/>
 
 			<Button onClick={handleLogin} disabled={loading} className="w-full">
-				{loading ? 'Logging in...' : 'Login'}
+				{loading ? "Logging in..." : "Login"}
 			</Button>
 		</div>
 	);
