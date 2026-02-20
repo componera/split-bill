@@ -10,31 +10,25 @@ export default function AdminPosPage() {
 	const [status, setStatus] = useState<"idle" | "loading" | "connected" | "error">("idle");
 
 	useEffect(() => {
-		if (!code) return;
-
 		const exchangeCode = async () => {
-			setStatus("loading"); // wrapped in async function
+			if (!code) return;
+
+			setStatus("loading");
 
 			try {
 				const res = await fetch("/api/square-exchange", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					credentials: "include", // only if backend uses cookies for JWT
+					credentials: "include", // sends cookies
 					body: JSON.stringify({ code }),
 				});
 
-				const data = await res.json();
+				if (!res.ok) throw new Error("Failed to connect Square");
 
-				if (!res.ok || data.error) {
-					console.error("Square auth error:", data);
-					setStatus("error");
-					return;
-				}
+				// Optional: refresh access_token after redirect
+				await fetch("/auth/refresh", { method: "POST", credentials: "include" });
 
-				console.log("Square auth saved:", data);
 				setStatus("connected");
-
-				// Clean URL
 				window.history.replaceState({}, document.title, "/admin/pos");
 			} catch (err) {
 				console.error(err);
@@ -46,7 +40,7 @@ export default function AdminPosPage() {
 	}, [code]);
 
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-white dark:bg-black p-8">
+		<div className="flex min-h-screen flex-col items-center justify-center gap-8 p-8 bg-white dark:bg-black">
 			<h1 className="text-2xl font-bold">POS Integration</h1>
 
 			{status === "connected" ? (
