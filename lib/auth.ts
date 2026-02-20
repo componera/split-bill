@@ -1,23 +1,6 @@
 "use client";
 
-import { serialize } from 'cookie';
 import { API_BASE_URL } from "./constants";
-
-
-/**
- * Safely set token in browser
- */
-export function setTokenCookie(res: Response, token: string) {
-    const cookie = serialize('access_token', token, {
-        httpOnly: true,      // not accessible via JS
-        secure: process.env.NODE_ENV === 'production', // send only over HTTPS
-        path: '/',           // available on all routes
-        sameSite: 'lax',     // CSRF protection
-        maxAge: 60 * 60 * 24, // 1 day
-    });
-
-    res.headers.append('Set-Cookie', cookie);
-}
 
 /**
  * Register a new restaurant/admin user
