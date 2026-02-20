@@ -11,30 +11,30 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
 	const router = useRouter();
-	const [authorized, setAuthorized] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [user, setUser] = useState<any>(null);
 
 	useEffect(() => {
-		(async () => {
-			try {
-				const user = await getUser(); // await the Promise
-
-				if (!user) {
-					router.push("/login");
-					return;
-				}
-
-				if (allowedRoles && !allowedRoles.includes(user.role)) {
-					router.push("/login");
-					return;
-				}
-
-				setAuthorized(true); // user is allowed
-			} catch {
+		const checkAuth = async () => {
+			const currentUser = await getUser(); // fetches from /api/auth/me
+			if (!currentUser) {
 				router.push("/login");
+				return;
 			}
-		})();
+
+			if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
+				router.push("/login");
+				return;
+			}
+
+			setUser(currentUser);
+			setLoading(false);
+		};
+
+		checkAuth();
 	}, [allowedRoles, router]);
 
-	// Only render children if authorized
-	return <>{authorized ? children : null}</>;
+	if (loading) return <div>Loading...</div>; // optional spinner
+
+	return <>{children}</>;
 }
