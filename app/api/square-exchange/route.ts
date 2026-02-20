@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Exchange code for Square tokens
-        const tokenRes = await fetch("https://connect.squareup.com/oauth2/token", {
+        const tokenRes = await fetch(`${process.env.SQUARE_API_URL}/oauth2/token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                cookie: req.headers.get("cookie") ?? "", // forward HttpOnly cookies for auth
             },
+            credentials: "include",
             body: JSON.stringify({
                 squareAccessToken: tokenData.access_token,
                 squareMerchantId: tokenData.merchant_id,
