@@ -1,6 +1,7 @@
 "use client";
 
 import { API_BASE_URL } from "./constants";
+import { AuthUser } from "./user";
 
 /**
  * Register a new restaurant/admin user
@@ -62,12 +63,18 @@ export async function logout() {
  * Get current logged-in user
  * Relies on server reading cookie
  */
-export async function getUser() {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-        credentials: "include",
-    });
+export async function getUser(): Promise<AuthUser | null> {
+    if (typeof window === 'undefined') return null;
 
-    if (!res.ok) return null;
+    try {
+        const res = await fetch('/api/auth/me', {
+            credentials: 'include',
+        });
 
-    return res.json(); // server returns user info based on cookie
+        if (!res.ok) return null;
+
+        return await res.json();
+    } catch {
+        return null;
+    }
 }

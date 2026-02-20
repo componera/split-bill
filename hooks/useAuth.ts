@@ -1,47 +1,56 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUser as fetchCurrentUser, logout as logoutFn } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
+import { AuthUser } from '@/lib/user';
+
+interface UseAuthReturn {
+    user: AuthUser | null;
+    loading: boolean;
+    login: (email: string, password: string) => Promise<void>;
+    logout: () => Promise<void>;
+    refreshUser: () => Promise<void>;
+}
 
 /**
  * Auth hook - manages current user state using cookies.
  * No token stored in client; HttpOnly cookies are used.
  */
-export function useAuth() {
-    const [user, setUser] = useState<any | null>(null);
+export function useAuth(): UseAuthReturn {
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const refreshUser = useCallback(async () => {
+        try {
+            const currentUser = await fetchCurrentUser();
+            setUser(currentUser);
+        } catch {
+            setUser(null);
+        }
+    }, []);
 
     // Sync user on mount
     useEffect(() => {
         (async () => {
-            try {
-                const currentUser = await fetchCurrentUser();
-                setUser(currentUser);
-            } catch {
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
+            await refreshUser();
+            setLoading(false);
         })();
-    }, []);
+    }, [refreshUser]);
 
     const login = async (email: string, password: string) => {
-        // login via cookie-based endpoint
-        const res = await apiFetch('/auth/login', {
+        await apiFetch('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
 
-        // apiFetch already throws if not ok, so response is valid
-        const currentUser = await fetchCurrentUser();
-        setUser(currentUser);
+        await refreshUser();
     };
 
-    const logout = () => {
-        logoutFn();
+    const logout = async () => {
+        await logoutFn(); // calls backend to clear cookies
         setUser(null);
     };
 
-    return { user, login, logout, loading };
+    return { user, loading, login, logout, refreshUser };
 }
