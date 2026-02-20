@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import SelectSquareLocation from "@/components/SelectSquareLocation";
 import { SquareLocation } from "@/types/square";
+import { Square } from "lucide-react";
+import SquareConnectButton from "@/components/SquareConnectButton";
 
 export default function AdminPosPage() {
 	const searchParams = useSearchParams();
@@ -52,10 +54,19 @@ export default function AdminPosPage() {
 			<h1 className="text-2xl font-bold">POS Integration</h1>
 
 			{status === "loading" && <div>Connecting to Square...</div>}
+
 			{status === "error" && <div className="text-red-600">Failed to connect. Please try again.</div>}
 
-			{locations && locations.length > 0 && <SelectSquareLocation locations={locations} />}
-			{!locations && status === "idle" && <div>Click the button below to connect Square.</div>}
+			{locations && locations.length > 0 ? (
+				<SelectSquareLocation locations={locations} />
+			) : (
+				status === "idle" && (
+					<>
+						<div>Click the button below to connect Square.</div>
+						<SquareConnectButton />
+					</>
+				)
+			)}
 		</div>
 	);
 }
