@@ -1,29 +1,47 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUser, logout, setToken } from '@/lib/auth';
+import { getUser as fetchCurrentUser, logout as logoutFn } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 
-/** Auth hook - user from JWT, login, logout. Syncs on mount. */
+/**
+ * Auth hook - manages current user state using cookies.
+ * No token stored in client; HttpOnly cookies are used.
+ */
 export function useAuth() {
-    const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
+    const [user, setUser] = useState<any | null>(null);
+    const [loading, setLoading] = useState(true);
 
+    // Sync user on mount
     useEffect(() => {
-        setUser(getUser());
+        (async () => {
+            try {
+                const currentUser = await fetchCurrentUser();
+                setUser(currentUser);
+            } catch {
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        })();
     }, []);
 
     const login = async (email: string, password: string) => {
+        // login via cookie-based endpoint
         const res = await apiFetch('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
 
-        if (!res.ok) throw new Error('Login failed');
-
-        const data = await res.json();
-        setToken(data.accessToken);
-        setUser(getUser());
+        // apiFetch already throws if not ok, so response is valid
+        const currentUser = await fetchCurrentUser();
+        setUser(currentUser);
     };
 
-    return { user, login, logout };
+    const logout = () => {
+        logoutFn();
+        setUser(null);
+    };
+
+    return { user, login, logout, loading };
 }

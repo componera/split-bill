@@ -1,26 +1,10 @@
 "use client";
 
-import { decodeToken, type JwtPayload } from "./jwt";
 import { API_BASE_URL } from "./constants";
 
 /**
- * Safely get token in browser
- */
-export function getToken(): string | null {
-    if (typeof window === 'undefined') return null; // SSR-safe
-    return localStorage.getItem('accessToken');
-}
-
-/**
- * Safely set token in browser
- */
-export function setToken(token: string) {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('accessToken', token);
-}
-
-/**
  * Register a new restaurant/admin user
+ * Server will set the auth cookie (HttpOnly)
  */
 export async function register(data: {
     restaurantName: string;
@@ -30,40 +14,60 @@ export async function register(data: {
     lastName: string;
 }) {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // important to include cookies
         body: JSON.stringify(data),
     });
 
-    if (!res.ok) throw new Error('Registration failed');
+    if (!res.ok) throw new Error("Registration failed");
 
-    const result = await res.json();
-
-    // Only set token in browser
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', result.accessToken);
-    }
-
-    return result;
+    return res.json(); // return user info or server response
 }
 
 /**
- * Logout safely
+ * Login user
  */
-export function logout() {
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/login';
+export async function login(email: string, password: string) {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) throw new Error("Login failed");
+
+    return res.json();
+}
+
+/**
+ * Logout user
+ * Server can clear the cookie if needed via API or just redirect
+ */
+export async function logout() {
+    // Optional: call server to clear cookie
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+    });
+
+    // Redirect to login page
+    if (typeof window !== "undefined") {
+        window.location.href = "/login";
     }
 }
 
 /**
- * Decode JWT to get user info
+ * Get current logged-in user
+ * Relies on server reading cookie
  */
-export function getUser(): JwtPayload | null {
-    if (typeof window === 'undefined') return null; // SSR-safe
-    const token = getToken();
-    if (!token) return null;
-    return decodeToken(token);
+export async function getUser() {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        credentials: "include",
+    });
+
+    if (!res.ok) return null;
+
+    return res.json(); // server returns user info based on cookie
 }

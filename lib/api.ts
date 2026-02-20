@@ -1,134 +1,117 @@
 "use client";
 
-import { getToken, setToken, logout } from "./auth";
 import { API_BASE_URL } from "./constants";
 
 let isRefreshing = false;
-let refreshPromise: Promise<string> | null = null;
+let refreshPromise: Promise<void> | null = null;
 
-/** Deduplicated token refresh - prevents multiple refresh calls on 401 burst */
-async function refreshAccessToken(): Promise<string> {
+/**
+ * Deduplicated access token refresh
+ * Uses httpOnly refresh cookie automatically
+ */
+async function refreshAccessToken(): Promise<void> {
   if (isRefreshing && refreshPromise) return refreshPromise;
+
   isRefreshing = true;
+
   refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
     method: "POST",
-    credentials: "include",
+    credentials: "include", // critical
   })
     .then(async (res) => {
       if (!res.ok) throw new Error("Refresh failed");
-      const data = await res.json();
-      setToken(data.accessToken);
-      return data.accessToken;
     })
     .finally(() => {
       isRefreshing = false;
+      refreshPromise = null;
     });
+
   return refreshPromise;
 }
 
-/** Build request headers with auth token */
-function buildHeaders(token: string | null, options: RequestInit): HeadersInit {
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...(options.headers || {}),
-  };
-}
-
 /**
- * Authenticated fetch with auto token refresh on 401.
- * Deduplicates refresh requests to reduce server load.
+ * Authenticated fetch using cookies only.
+ * Automatically retries after refresh on 401.
  */
-export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  let token = getToken();
-  let res = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    credentials: "include",
-    headers: buildHeaders(token, options),
-  });
+export async function apiFetch<T = any>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const fetchWithCredentials = () =>
+    fetch(`${API_BASE_URL}${url}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+
+  let res = await fetchWithCredentials();
 
   if (res.status === 401) {
     try {
-      token = await refreshAccessToken();
-      res = await fetch(`${API_BASE_URL}${url}`, {
-        ...options,
-        credentials: "include",
-        headers: buildHeaders(token, options),
-      });
+      await refreshAccessToken();
+      res = await fetchWithCredentials();
     } catch {
-      logout();
+      window.location.href = "/login";
       throw new Error("Session expired");
     }
   }
 
-  return res;
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Request failed");
+  }
+
+  // Try to parse JSON, fallback to undefined
+  try {
+    return await res.json();
+  } catch {
+    return undefined as unknown as T;
+  }
 }
 
-/**
- * Fetch a single bill
- */
+/** Bills API */
 export async function fetchBill(billId: string) {
-  const res = await apiFetch(`/bills/${billId}`, {
-    method: 'GET',
-    cache: 'no-store',
-  });
-
-  if (!res.ok) throw new Error('Failed to fetch bill');
-
-  return res.json();
+  return apiFetch(`/bills/${billId}?cache=no-store`);
 }
 
-/**
- * Pay selected items on a bill
- */
 export async function payItems(billId: string, itemIds: string[]) {
-  const res = await apiFetch('/payments', {
-    method: 'POST',
-    body: JSON.stringify({
-      billId,
-      itemIds,
-    }),
+  return apiFetch("/payments", {
+    method: "POST",
+    body: JSON.stringify({ billId, itemIds }),
   });
-
-  if (!res.ok) throw new Error('Payment failed');
-
-  return res.json();
 }
 
-/** Staff API - uses apiFetch for auth + refresh token handling */
+/** Staff API */
 export async function fetchStaff() {
-  const res = await apiFetch('/staff');
-  if (!res.ok) throw new Error('Failed to fetch staff');
-  return res.json() as Promise<{ users: StaffUser[]; invites: StaffInvite[] }>;
+  return apiFetch<{ users: StaffUser[]; invites: StaffInvite[] }>("/staff");
 }
 
 export async function inviteStaff(email: string) {
-  const res = await apiFetch('/staff/invite', {
-    method: 'POST',
+  return apiFetch("/staff/invite", {
+    method: "POST",
     body: JSON.stringify({ email }),
   });
-  if (!res.ok) throw new Error('Failed to invite');
-  return res.json();
 }
 
 export async function revokeInvite(inviteId: string) {
-  const res = await apiFetch(`/staff/invite/${inviteId}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to revoke');
+  return apiFetch(`/staff/invite/${inviteId}`, { method: "DELETE" });
 }
 
 export async function resendInvite(inviteId: string) {
-  const res = await apiFetch('/staff/resend', {
-    method: 'POST',
+  return apiFetch("/staff/resend", {
+    method: "POST",
     body: JSON.stringify({ inviteId }),
   });
-  if (!res.ok) throw new Error('Failed to resend');
 }
 
 export async function removeStaff(userId: string) {
-  const res = await apiFetch(`/staff/${userId}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to remove staff');
+  return apiFetch(`/staff/${userId}`, { method: "DELETE" });
 }
 
+/** Types */
 export interface StaffUser {
   id: string;
   email: string;
@@ -140,4 +123,3 @@ export interface StaffInvite {
   email: string;
   expiresAt: string;
 }
-
