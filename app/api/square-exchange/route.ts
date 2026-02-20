@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
                 client_secret: process.env.SQUARE_CLIENT_SECRET,
                 code,
                 grant_type: "authorization_code",
+                redirect_uri: `${process.env.NEXT_PUBLIC_BASE_URL}/admin/pos`, // must match Square app settings
             }),
         });
 
